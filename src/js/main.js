@@ -5,11 +5,13 @@ var hello = require('./sample/hello');
 var loadGoogleMapsApi = require('load-google-maps-api-2');
 
 
-loadGoogleMapsApi.key = 'AIzaSyDmSxIrhoC4OAiGOtO6ddcFCwSMRbgfPGs';
+loadGoogleMapsApi.key = 'AIzaSyAhyUYucbXxTTww6TrL4OifnmVZFBh1oOY';
 loadGoogleMapsApi.language = 'ko';
 loadGoogleMapsApi.version = '3';
 
 var googleMaps;
+var map;
+var infoWindow;
 
 loadGoogleMapsApi().then(function(_googleMaps) {
     googleMaps = _googleMaps;
@@ -24,11 +26,12 @@ var latLng = {
 };
 
 function initMap() {
-    var map = new googleMaps.Map($('#google-map')[0], {
+    map = new googleMaps.Map($('#google-map')[0], {
         center: latLng,
         zoom: 15
     });
-    var infoWindow = new googleMaps.InfoWindow({map: map});
+
+    infoWindow = new googleMaps.InfoWindow();
 
     // Try HTML5 geolocation.
     if (navigator.geolocation) {
@@ -37,9 +40,6 @@ function initMap() {
                 lat: position.coords.latitude,
                 lng: position.coords.longitude
             };
-
-            infoWindow.setPosition(pos);
-            infoWindow.setContent('Location found.');
             map.setCenter(pos);
         }, function() {
             handleLocationError(true, infoWindow, map.getCenter());
@@ -61,9 +61,35 @@ function mapClickEvent(latLng, map) {
         map: map
     });
 
+    var metadata = 'https://maps.googleapis.com/maps/api/streetview/metadata?';
+    var thumbnail = 'https://maps.googleapis.com/maps/api/streetview?';
+    var parameters = 'size=600x300&location=' + latLng.lat() + ',' + latLng.lng() +
+        '&heading=165&pitch=-0' +
+        '&key=' + loadGoogleMapsApi.key;
+
+    $.getJSON(metadata + parameters, function (json) {
+        if(json.status === 'OK') {
+            var content = '<img src="'+ thumbnail + parameters + '" style="width:200px;height:100px">';
+            infoWindow.close();
+            infoWindow.setContent(content);
+            infoWindow.open(map, marker);
+        } else {
+            infoWindow.close();
+        }
+    });
+
     markers.push(marker);
     flightPlanCoordinates.push(latLng);
     addLine(map);
+
+}
+
+function processSVData(data, status) {
+    if (status === 'OK') {
+
+    } else {
+        console.error('Street View data not found for this location.');
+    }
 }
 
 var markers = [];
