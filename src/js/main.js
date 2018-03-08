@@ -55,12 +55,16 @@ function initMap() {
     });
 }
 
+
+var thumnailImg = [];
 function mapClickEvent(latLng, map) {
+    // marker 입력
     var marker = new googleMaps.Marker({
         position: latLng,
         map: map
     });
 
+    // 파노라마 섬네일 infowindow에 입력
     var metadata = 'https://maps.googleapis.com/maps/api/streetview/metadata?';
     var thumbnail = 'https://maps.googleapis.com/maps/api/streetview?';
     var parameters = 'size=600x300&location=' + latLng.lat() + ',' + latLng.lng() +
@@ -68,33 +72,70 @@ function mapClickEvent(latLng, map) {
         '&key=' + loadGoogleMapsApi.key;
 
     $.getJSON(metadata + parameters, function (json) {
+        var content = '';
         if(json.status === 'OK') {
-            var content = '<img src="'+ thumbnail + parameters + '" style="width:200px;height:100px">';
+            content = '<img src="'+ thumbnail + parameters + '" style="width:200px;height:100px">';
+            content += '<button class="cc2-gmap-btn-delete" lat="' + latLng.lat() + '" lng="' + latLng.lng() + '">삭제</button>';
             infoWindow.close();
             infoWindow.setContent(content);
             infoWindow.open(map, marker);
         } else {
+            content += content += '<button class="cc2-gmap-btn-delete" lat="' + latLng.lat() + '" lng="' + latLng.lng() + '">삭제</button>';
             infoWindow.close();
+            infoWindow.setContent(content);
+            infoWindow.open(map, marker);
         }
+        thumnailImg.push(content);
+
+        markerRemove();
+    });
+
+    marker.addListener('click', function () {
+        var index = $.inArray(this, markers);
+        infoWindow.close();
+        infoWindow.setContent(thumnailImg[index]);
+        infoWindow.open(map, marker);
+
+        markerRemove();
     });
 
     markers.push(marker);
     flightPlanCoordinates.push(latLng);
     addLine(map);
-
 }
 
-function processSVData(data, status) {
-    if (status === 'OK') {
+function markerRemove() {
+    $('.cc2-gmap-btn-delete').off();
+    $('.cc2-gmap-btn-delete').on('click', function () {
+        var _latLng = {
+            lat: $(this).attr('lat').toString(),
+            lng: $(this).attr('lng').toString()
+        };
 
-    } else {
-        console.error('Street View data not found for this location.');
-    }
+        var index = 0;
+        $.each(markers, function (i, e) {
+            var lat = e.getPosition().lat().toString();
+            var lng = e.getPosition().lng().toString();
+
+            if (_latLng.lat === lat && _latLng.lng === lng) {
+                index = i;
+                return false;
+            }
+        });
+
+        markers[index].setMap(null);
+        delete markers[index];
+        delete flightPlanCoordinates[index];
+        delete travelPathArray[index];
+
+
+    });
 }
 
 var markers = [];
 var flightPlanCoordinates = [];
 var travelPathArray = [];
+
 function addLine(map) {
     for (var i in travelPathArray){
         travelPathArray[i].setMap(null);
