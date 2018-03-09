@@ -57,6 +57,7 @@ function initMap() {
 
 
 var thumnailImg = [];
+var markers = [];
 function mapClickEvent(latLng, map) {
     // marker 입력
     var marker = new googleMaps.Marker({
@@ -101,7 +102,7 @@ function mapClickEvent(latLng, map) {
 
     markers.push(marker);
     flightPlanCoordinates.push(latLng);
-    addLine(map);
+    drawLine(map);
 }
 
 function markerRemove() {
@@ -124,19 +125,17 @@ function markerRemove() {
         });
 
         markers[index].setMap(null);
-        delete markers[index];
-        delete flightPlanCoordinates[index];
-        delete travelPathArray[index];
+        markers.splice(index, 1);
+        thumnailImg.splice(index, 1);
 
-
+        flightPlanCoordinates.splice(index, 1);
+        drawLine(map);
     });
 }
 
-var markers = [];
 var flightPlanCoordinates = [];
 var travelPathArray = [];
-
-function addLine(map) {
+function drawLine(map) {
     for (var i in travelPathArray){
         travelPathArray[i].setMap(null);
     }
